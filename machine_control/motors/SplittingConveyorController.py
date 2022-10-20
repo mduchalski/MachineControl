@@ -1,5 +1,10 @@
-import RPi.GPIO as gpio
+import os
 
+if os.getenv('MACHINE_CTRL_MOCK_MODE') == '1':
+    from mock_gpio import MockGpio
+    gpio = MockGpio()
+else:
+    import RPi.GPIO as gpio
 
 class SplittingConveyorController:
     DEFAULT_FREQUENCY = 20

@@ -1,5 +1,10 @@
-import RPi.GPIO as gpio
+import os
 
+if os.getenv('MACHINE_CTRL_MOCK_MODE') == '1':
+    from mock_gpio import MockGpio
+    gpio = MockGpio()
+else:
+    import RPi.GPIO as gpio
 
 class CameraConveyorController:
     INPUT_1 = 17  # Input 1 for spinning direction

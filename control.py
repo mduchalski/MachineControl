@@ -1,8 +1,14 @@
 from threading import Thread
 from typing import Optional
-import RPi.GPIO as GPIO
 import time
 import falcon
+import os
+
+if os.getenv('MACHINE_CTRL_MOCK_MODE') == '1':
+    from mock_gpio import MockGpio
+    GPIO = MockGpio()
+else:
+    import RPi.GPIO as GPIO
 
 LEFT = 1
 RIGHT = 0
