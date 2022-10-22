@@ -1,25 +1,61 @@
-# Quick and dirty "mock" GPIO implementation to enable testing w/o actual HW
-# TODO Capture pin status instead of just printing function calls
+pin_states = {}
 
-class Callable:
+class PinState:
 
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, parent, freq=None):
+        self.parent = parent
+        self.freq = freq
+        if freq == None:
+            self.state = False
+        else:
+            self.state = 0.0
 
-    def __call__(self, *args):
-        print(self.name, args)
-        # Returning self to enable recursive calls (for PWM)
-        return self
+    def __str__(self):
+        if self.freq == None:
+            return 'HIGH' if self.state else 'LOW'
+        else:
+            return f'PWM {100*self.state:.1f}% ({self.freq}Hz)'
 
-    def __getattr__(self, name):
-        return Callable(self.name + '.' + name)
-        
+    def ChangeFrequency(self, freq):
+        self.freq = freq
+        self.parent.update()
+
+    def start(self, duty_int):
+        self.state = duty_int / 100
+        self.parent.update()
+    
+    def stop(self):
+        self.state = 0.0
+        self.parent.update()
+
 class MockGpio:
 
-    def __getattr__(self, name):
-        if name.isupper() and name != 'PWM':
-            # Constants - IN, OUT, BCM, ...
-            return name
-        else:
-            # Methods - setmode, ...
-            return Callable(name)
+    IN  = 'IN'
+    OUT = 'OUT'
+    BCM = 'BCM'
+
+    def setmode(self, _):
+        pass
+
+    def cleanup(self):
+        pass
+
+    def setup(self, pin, mode):
+        if mode == self.OUT:
+            pin_states[pin] = PinState(self)
+        self.update()
+
+    def PWM(self, pin, freq):
+        pin_states[pin] = PinState(self, freq)
+        self.update()
+        return pin_states[pin]
+
+    def output(self, pin, state):
+        pin_states[pin].freq = None
+        pin_states[pin].state = state
+        self.update()
+
+    def update(self):
+        for pin, state in pin_states.items():
+            print(f'{pin:3}: {state}')
+        print()
